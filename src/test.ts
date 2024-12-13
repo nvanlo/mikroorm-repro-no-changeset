@@ -12,10 +12,7 @@ import {
 
 @Entity()
 class User {
-    @PrimaryKey()
-    id!: number;
-
-    @Property()
+    @Property({primary: true})
     name: string;
 
     @OneToMany(() => Address, (address) => address.user, {eager: false})
@@ -29,23 +26,20 @@ class User {
 @Entity()
 class Address {
     @Property({primary: true})
-    id!: number;
-
-    @Property()
-    country: string;
+    place: string;
 
     @ManyToOne(() => User)
     user: Ref<User>;
 
     constructor(country: string, user: User) {
-        this.country = country;
+        this.place = country;
         this.user = ref(user);
     }
 }
 
 let orm: MikroORM;
 
-beforeAll(async () => {
+beforeEach(async () => {
     orm = await MikroORM.init({
         dbName: ":memory:",
         entities: [User],
@@ -56,50 +50,64 @@ beforeAll(async () => {
 });
 
 afterEach(async () => {
-    await orm.em.removeAndFlush(orm.em.getReference(Address, 1))
-    await orm.em.removeAndFlush(orm.em.getReference(User, 1));
-});
-
-afterAll(async () => {
     await orm.close(true);
 });
 
 test("Creating an address with the same id throws a unique constraint error when ser.addresses is not loaded", async () => {
     orm.em.create(Address, {
-        id: 1,
-        user: orm.em.create(User, {name: "User"}),
-        country: "Belgium",
+        user: orm.em.create(User, {name: "Nik"}),
+        place: "Belgium",
     });
     await orm.em.flush();
     orm.em.clear()
 
-    const user = await orm.em.findOneOrFail(User, {id: 1});
+    const user = await orm.em.findOneOrFail(User, {name: "Nik"});
     await expect(async () => {
         orm.em.create(Address, {
-            id: 1,
             user: user,
-            country: "Belgium",
+            place: "Belgium",
         });
         await orm.em.flush();
     }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
 });
 
-test("Creating an address with the same id throws a unique constraint error when User.addresses populated", async () => {
+test("Creating an address with the same id throws a unique constraint error when User.addresses is/ populated", async () => {
     orm.em.create(Address, {
-        id: 1,
-        user: orm.em.create(User, {name: "User"}),
-        country: "Belgium",
+        user: orm.em.create(User, {name: "Nik"}),
+        place: "Belgium",
     });
     await orm.em.flush();
     orm.em.clear()
 
-    const user = await orm.em.findOneOrFail(User, {name: "User"}, {populate: ["addresses"]});
+    const user = await orm.em.findOneOrFail(User, {name: "Nik"}, {populate: ["addresses"]});
     await expect(async () => {
         orm.em.create(Address, {
-            id: 1,
             user: user,
-            country: "Belgium",
+            place: "Belgium",
         });
+        await orm.em.flush();
+    }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
+});
+
+test("Creating a user with the same name throws a unique constraint", async () => {
+    orm.em.create(User, {name: "Nik"})
+    await orm.em.flush();
+    orm.em.clear()
+
+    await expect(async () => {
+        orm.em.create(User, {name: "Nik"})
+        await orm.em.flush();
+    }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
+});
+
+test("Creating a user with the same name throws a unique constraint when user is already fetched before", async () => {
+    orm.em.create(User, {name: "Nik"})
+    await orm.em.flush();
+    orm.em.clear()
+
+    await orm.em.find(User, {name: "Nik"});
+    await expect(async () => {
+        orm.em.create(User, {name: "Nik"})
         await orm.em.flush();
     }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
 });
