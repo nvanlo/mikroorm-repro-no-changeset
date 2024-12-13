@@ -37,7 +37,7 @@ class Address {
     @ManyToOne(() => User)
     user: Ref<User>;
 
-    constructor(type: string, country: string, user: User) {
+    constructor(country: string, user: User) {
         this.country = country;
         this.user = ref(user);
     }
