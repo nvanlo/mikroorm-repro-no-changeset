@@ -72,7 +72,7 @@ afterAll(async () => {
     await orm.close(true);
 });
 
-test("create user and address with same id throws unique constraint exception", async () => {
+test("Creating an address with the same id throws a unique constraint error when ser.addresses is not loaded", async () => {
     orm.em.create(Address, {
         id: 1,
         type: "home",
@@ -94,7 +94,7 @@ test("create user and address with same id throws unique constraint exception", 
     }).rejects.toThrowError();
 });
 
-test("Creating address with the same id should always throw a constraint exception", async () => {
+test("Creating an address with the same id throws a unique constraint error when User.addresses populated", async () => {
     orm.em.create(Address, {
         id: 1,
         type: "home",
