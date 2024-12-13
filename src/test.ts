@@ -81,7 +81,7 @@ test("Creating an address with the same id throws a unique constraint error when
             country: "Belgium",
         });
         await orm.em.flush();
-    }).rejects.toThrowError("dd");
+    }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
 });
 
 test("Creating an address with the same id throws a unique constraint error when User.addresses populated", async () => {
@@ -101,7 +101,7 @@ test("Creating an address with the same id throws a unique constraint error when
             country: "Belgium",
         });
         await orm.em.flush();
-    }).rejects.toThrowError("");
+    }).rejects.toThrow(/.*SQLITE_CONSTRAINT.*/);
 });
 
 
