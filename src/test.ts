@@ -18,15 +18,11 @@ class User {
     @Property()
     name: string;
 
-    @Property()
-    email: string;
-
     @OneToMany(() => Address, (address) => address.user, {eager: false})
     addresses = new Collection<Address>(this);
 
-    constructor(name: string, email: string) {
+    constructor(name: string) {
         this.name = name;
-        this.email = email;
     }
 }
 
@@ -36,16 +32,12 @@ class Address {
     id!: number;
 
     @Property()
-    type: string;
-
-    @Property()
     country: string;
 
     @ManyToOne(() => User)
     user: Ref<User>;
 
     constructor(type: string, country: string, user: User) {
-        this.type = type;
         this.country = country;
         this.user = ref(user);
     }
@@ -75,8 +67,7 @@ afterAll(async () => {
 test("Creating an address with the same id throws a unique constraint error when ser.addresses is not loaded", async () => {
     orm.em.create(Address, {
         id: 1,
-        type: "home",
-        user: orm.em.create(User, {name: "User", email: "foo"}),
+        user: orm.em.create(User, {name: "User"}),
         country: "Belgium",
     });
     await orm.em.flush();
@@ -86,19 +77,17 @@ test("Creating an address with the same id throws a unique constraint error when
     await expect(async () => {
         orm.em.create(Address, {
             id: 1,
-            type: "home",
             user: user,
             country: "Belgium",
         });
         await orm.em.flush();
-    }).rejects.toThrowError();
+    }).rejects.toThrowError("dd");
 });
 
 test("Creating an address with the same id throws a unique constraint error when User.addresses populated", async () => {
     orm.em.create(Address, {
         id: 1,
-        type: "home",
-        user: orm.em.create(User, {name: "User", email: "foo"}),
+        user: orm.em.create(User, {name: "User"}),
         country: "Belgium",
     });
     await orm.em.flush();
@@ -108,12 +97,11 @@ test("Creating an address with the same id throws a unique constraint error when
     await expect(async () => {
         orm.em.create(Address, {
             id: 1,
-            type: "home",
             user: user,
             country: "Belgium",
         });
         await orm.em.flush();
-    }).rejects.toThrowError();
+    }).rejects.toThrowError("");
 });
 
 
