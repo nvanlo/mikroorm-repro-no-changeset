@@ -4,7 +4,6 @@ import {
     ManyToOne,
     MikroORM,
     OneToMany,
-    PrimaryKey,
     Property,
     ref,
     Ref,
