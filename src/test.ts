@@ -73,15 +73,16 @@ afterAll(async () => {
 });
 
 test("create user and address with same id throws unique constraint exception", async () => {
-    const user = orm.em.create(User, {name: "User", email: "foo"});
     orm.em.create(Address, {
         id: 1,
         type: "home",
-        user: user,
+        user: orm.em.create(User, {name: "User", email: "foo"}),
         country: "Belgium",
     });
     await orm.em.flush();
+    orm.em.clear()
 
+    const user = await orm.em.findOneOrFail(User, {id: 1});
     await expect(async () => {
         orm.em.create(Address, {
             id: 1,
@@ -94,18 +95,17 @@ test("create user and address with same id throws unique constraint exception", 
 });
 
 test("Creating address with the same id should always throw a constraint exception", async () => {
-    const user = orm.em.create(User, {name: "User", email: "foo"});
     orm.em.create(Address, {
         id: 1,
         type: "home",
-        user: user,
+        user: orm.em.create(User, {name: "User", email: "foo"}),
         country: "Belgium",
     });
     await orm.em.flush();
     orm.em.clear()
 
+    const user = await orm.em.findOneOrFail(User, {name: "User"}, {populate: ["addresses"]});
     await expect(async () => {
-        const user = await orm.em.findOneOrFail(User, {id: 1});
         orm.em.create(Address, {
             id: 1,
             type: "home",
